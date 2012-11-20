@@ -12,6 +12,11 @@ var mime = require('mime');
 var handlebars = require('handlebars');
 var useragent = require('useragent');
 
+// danny hack
+var zmq = require("zmq");
+var url = require("url");
+/// hack
+
 // this is a copy of underscore that will be shipped just for use by
 // this file, server.js.
 var _ = require('./underscore.js');
@@ -116,6 +121,14 @@ var run = function () {
 
     app_html = runtime_config(app_html);
 
+      // Danny hack
+
+      // connect to auth port
+      var socket = zmq.createSocket('req');
+      socket.connect('tcp://127.0.0.1:12006');
+
+      /// hack
+
     app.use(function (req, res) {
       // prevent favicon.ico and robots.txt from returning app_html
       if (_.indexOf(['/favicon.ico', '/robots.txt'], req.url) !== -1) {
@@ -124,12 +137,47 @@ var run = function () {
         return;
       }
 
-      res.writeHead(200, {'Content-Type': 'text/html; charset=utf-8'});
-      if (supported_browser(req.headers['user-agent']))
-        res.write(app_html);
-      else
-        res.write(unsupported_html);
-      res.end();
+
+
+      // Danny hack
+
+      // parse qs
+      var url_parts = url.parse(req.url, true);
+      var query = url_parts.query;
+      var u = encodeURIComponent(url.format({
+        'host': process.env.URL,
+        'query': query
+      }));
+
+      // get session from cookie
+      var cookies = {};
+      req.headers.cookie && req.headers.cookie.split(';').forEach(function( cookie ) {
+        var parts = cookie.split('=');
+        cookies[ parts[ 0 ].trim() ] = ( parts[ 1 ] || '' ).trim();
+      });
+      var session = (cookies.session) ? String(cookies.session) : '';
+
+      // handle auth response
+      socket.on('message', function(buf) {
+        data = JSON.parse(buf.toString());
+        if (data.success) {
+          res.writeHead(200, {'Content-Type': 'text/html'});
+          if (supported_browser(req.headers['user-agent']))
+            res.write(app_html);
+          else
+            res.write(unsupported_html);
+          res.end();
+        }
+        else {
+          res.writeHead(302, {'location': data.redirect + '?redirect=' + u});
+          res.end();
+        }
+      });
+
+      // send auth creds
+      socket.send(session);
+
+      /// hack
     });
 
     // run the user startup hooks.
