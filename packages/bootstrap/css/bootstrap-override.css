@@ -5,7 +5,7 @@
  * After being bundled, all CSS is minified and served from the "/" dir.
  * Thus, we need to provide absolute paths to the icons here.
  */
-
+/*
 [class^="icon-"],
 [class*=" icon-"] {
   background-image: url("/packages/bootstrap/img/glyphicons-halflings.png");
@@ -14,3 +14,4 @@
 .icon-white {
   background-image: url("/packages/bootstrap/img/glyphicons-halflings-white.png");
 }
+*/
