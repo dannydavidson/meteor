@@ -124,8 +124,10 @@ var run = function () {
       // Danny hack
 
       // connect to auth port
-      var socket = zmq.createSocket('req');
-      socket.connect('tcp://127.0.0.1:12006');
+      if (process.env.AUTH_ADDR) {
+          var socket = zmq.createSocket('req');
+          socket.connect('tcp://127.0.0.1:12006');
+      }
 
       /// hack
 
@@ -144,9 +146,11 @@ var run = function () {
       // parse qs
       var url_parts = url.parse(req.url, true);
       var query = url_parts.query;
+      var hash = url_parts.hash;
       var u = encodeURIComponent(url.format({
         'host': process.env.URL,
-        'query': query
+        'query': query,
+        'hash': hash
       }));
 
       // get session from cookie
@@ -158,24 +162,38 @@ var run = function () {
       var session = (cookies.session) ? String(cookies.session) : '';
 
       // handle auth response
-      socket.on('message', function(buf) {
-        data = JSON.parse(buf.toString());
-        if (data.success) {
-          res.writeHead(200, {'Content-Type': 'text/html'});
-          if (supported_browser(req.headers['user-agent']))
-            res.write(app_html);
-          else
-            res.write(unsupported_html);
-          res.end();
-        }
-        else {
-          res.writeHead(302, {'location': data.redirect + '?redirect=' + u});
-          res.end();
-        }
-      });
+      if (process.env.AUTH_ADDR) {
+        socket.on('message', function(buf) {
+          data = JSON.parse(buf.toString());
+          if (data.success) {
+            res.writeHead(200, {'Content-Type': 'text/html'});
+            if (supported_browser(req.headers['user-agent']))
+              res.write(app_html);
+            else
+              res.write(unsupported_html);
+            res.end();
+          }
+          else {
+            res.writeHead(302, {'location': data.redirect + '?redirect=' + u});
+            res.end();
+          }
+        });
+      }
 
       // send auth creds
-      socket.send(session);
+      if (process.env.AUTH_ADDR) {
+          socket.send(session);
+      }
+      else {
+        res.writeHead(200, {'Content-Type': 'text/html'});
+        if (supported_browser(req.headers['user-agent']))
+          res.write(app_html);
+        else
+          res.write(unsupported_html);
+        res.end();
+      }
+
+
 
       /// hack
     });
