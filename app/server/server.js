@@ -14,7 +14,14 @@ var useragent = require('useragent');
 
 
 // danny hack
-var zmq = require("zmq");
+try {
+  var zmq = require("zmq");
+  var hasZMQ = true;
+} 
+catch(e) {
+  var hasZMQ = false;
+}
+
 var url = require("url");
 /// hack
 
