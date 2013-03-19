@@ -17,6 +17,8 @@
  * references any .png.  When we update to using .less instead, use the less
  * directives in a less file instead.
  */
+
+ /*
 .icon-white,
 .nav-pills > .active > a > [class^="icon-"],
 .nav-pills > .active > a > [class*=" icon-"],
@@ -37,3 +39,4 @@
   background-image: url("/packages/bootstrap/img/glyphicons-halflings-white.png");
 }
 
+*/
